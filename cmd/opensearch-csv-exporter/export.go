@@ -11,12 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v7/esapi"
-
-	"github.com/sirupsen/logrus"
-
 	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type Request struct {
@@ -88,18 +86,6 @@ func export(config *Config) gin.HandlerFunc {
 		}
 
 		c.Header("transfer-encoding", "chunked")
-
-		defer func() {
-			c.Header("content-type", "application/csv")
-			c.Header("content-encoding", "gzip")
-
-			err = csv.Close()
-			if err != nil {
-				c.String(http.StatusInternalServerError, err.Error())
-				return
-			}
-		}()
-
 		body, err := createSearch(request)
 		if err != nil {
 			c.String(http.StatusBadGateway, err.Error())
@@ -112,6 +98,17 @@ func export(config *Config) gin.HandlerFunc {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
+
+		defer func() {
+			c.Header("content-type", "application/csv")
+			c.Header("content-encoding", "gzip")
+
+			err = csv.Close()
+			if err != nil {
+				c.String(http.StatusInternalServerError, err.Error())
+				return
+			}
+		}()
 
 		c.Header("total-hits", strconv.Itoa(totalHits))
 

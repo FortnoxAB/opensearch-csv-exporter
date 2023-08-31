@@ -9,15 +9,13 @@ import (
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/jonaz/ginlogrus"
-	"github.com/sirupsen/logrus"
-	"github.com/xonvanetta/shutdown/pkg/shutdown"
-
-	"github.com/gin-gonic/gin"
-
 	"github.com/fortnoxab/fnxlogrus"
 	"github.com/fortnoxab/ginprometheus"
+	"github.com/gin-gonic/gin"
+	"github.com/jonaz/ginlogrus"
 	"github.com/koding/multiconfig"
+	"github.com/sirupsen/logrus"
+	"github.com/xonvanetta/shutdown/pkg/shutdown"
 )
 
 type Config struct {

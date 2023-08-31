@@ -21,15 +21,15 @@ The `opensearch-csv-exporter` utility provides various configuration options tha
 
 These options can also be set using environment variables. The generated environment variables for each option are:
 
-| Environment Variable           | Description                                     |
-|--------------------------------|-------------------------------------------------|
-| CONFIG_LOG_FORMAT              | Change the log format.                          |
-| CONFIG_LOG_FORMATTER           | Change the log formatter.                       |
-| CONFIG_LOG_LEVEL               | Change the log level.                           |
-| CONFIG_OPENSEARCH_ADDRESSES    | Change the OpenSearch addresses.                |
-| CONFIG_OPENSEARCH_CACERTFILEPATH | Change the OpenSearch CA certificate file path. |
-| CONFIG_OPENSEARCH_INDICES       | Change the OpenSearch indices.                  |
-| CONFIG_PORT                     | Change the port.                                |
+| Environment Variable           | Description                                        |
+|--------------------------------|----------------------------------------------------|
+| CONFIG_LOG_FORMAT              | Change the log format.                             |
+| CONFIG_LOG_FORMATTER           | Change the log formatter.                          |
+| CONFIG_LOG_LEVEL               | Change the log level.                              |
+| CONFIG_OPENSEARCH_ADDRESSES    | Change the OpenSearch addresses.                   |
+| CONFIG_OPENSEARCH_CACERTFILEPATH | Change the OpenSearch CA ce rtificate file path.   |
+| CONFIG_OPENSEARCH_INDICES       | Change the OpenSearch indices.                     |
+| CONFIG_PORT                     | Change the port.                                   |
 
 ## Endpoint
 
@@ -41,12 +41,12 @@ POST /api/opensearch/csv-export-v1
 
 The request should include the following parameters:
 
-| Parameter   | Type    | Description                            |
-|-------------|---------|----------------------------------------|
-| fromDate    | string  | The start date for the export (format: "YYYY-MM-DD"). |
-| toDate      | string  | The end date for the export (format: "YYYY-MM-DD").   |
-| query       | string  | The query to filter the documents.                     |
-| columns     | array   | The list of columns to include in the CSV.              |
+| Parameter   | Type    | Description                                                                                                                  |
+|-------------|---------|------------------------------------------------------------------------------------------------------------------------------|
+| fromDate    | string  | The start date for the export (format: "YYYY-MM-DD"). This will be min value for date, example 2023-06-13 00:00 and forwards |
+| toDate      | string  | The end date for the export (format: "YYYY-MM-DD"). This will be max value for date, example 2023-06-14 23:59 and backwards  |
+| query       | string  | The query to filter the documents.                                                                                           |
+| columns     | array   | The list of columns to include in the CSV.                                                                                   |
 
 ## Request Headers
 
@@ -60,7 +60,7 @@ Replace `username` and `password` with your actual credentials, encoded in Base6
 
 ## Response
 
-The response will be a compressed CSV file containing the exported data. The file will be downloaded with the filename `test.csv.gz` in this example.
+The response will be a gzip compressed CSV file containing the exported data. The file will be downloaded with the filename `test.csv.gz` in this example.
 
 ## Example
 
@@ -89,7 +89,7 @@ Content-Length: 101
 
 ### Example Response
 
-The response will be a file named `test.csv.gz`, containing the exported data.
+The response will be a file named `test.csv.gz`, containing the exported data. This file is gzipped.
 
 ## Error Handling
 
