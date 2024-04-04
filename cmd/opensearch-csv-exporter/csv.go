@@ -54,8 +54,9 @@ func (csv *CSV) Close() error {
 
 func (csv *CSV) write(doc []byte) error {
 	var record []string
+	res := gjson.ParseBytes(doc)
 	for _, column := range csv.columns {
-		data := gjson.GetBytes(doc, column).Value()
+		data := res.Get(column).Value()
 		if data == nil {
 			data = ""
 		}

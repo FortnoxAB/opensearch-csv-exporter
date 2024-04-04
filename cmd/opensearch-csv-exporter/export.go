@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
@@ -150,7 +149,7 @@ func createSearch(request *Request) (io.Reader, error) {
 			} `json:"bool"`
 		} `json:"query"`
 	}{}
-	v.Size = 10000 //Needed since default size is 10
+	v.Size = size //Needed since default size is 10
 	v.Query.Bool.Must.QueryString.Query = request.Query
 	v.Query.Bool.Filter.Range.Timestamp.Gte = request.FromDate
 	v.Query.Bool.Filter.Range.Timestamp.Lte = request.ToDate
@@ -185,9 +184,13 @@ func search(ctx context.Context, config OpensearchConfig, client *elasticsearch.
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to search: %w", err)
 	}
-	defer response.Body.Close()
-	return decode(response, csv)
+	if response.IsError() {
+		return "", 0, fmt.Errorf("failed to decode, response is error: %s", response)
+	}
+	return decode(response.Body, csv)
 }
+
+var size = 10000
 
 func scroll(ctx context.Context, client *elasticsearch.Client, csv *CSV, body io.Reader) (string, error) {
 	s := client.Scroll
@@ -195,44 +198,141 @@ func scroll(ctx context.Context, client *elasticsearch.Client, csv *CSV, body io
 	if err != nil {
 		return "", fmt.Errorf("failed to scroll: %w", err)
 	}
-	defer response.Body.Close()
-	scrollId, _, err := decode(response, csv)
+	if response.IsError() {
+		return "", fmt.Errorf("failed to decode, response is error: %s", response)
+	}
+	scrollId, _, err := decode(response.Body, csv)
 	return scrollId, err
 }
 
-func decode(response *esapi.Response, csv *CSV) (string, int, error) {
-	defer response.Body.Close()
-	if response.IsError() {
-		return "", 0, fmt.Errorf("failed to decode, response is error: %s", response)
-	}
+func decode(body io.ReadCloser, csv *CSV) (string, int, error) {
+	defer body.Close()
 
-	v := &struct {
-		ScrollID string `json:"_scroll_id"`
-		Hits     struct {
-			Total struct {
-				Value int
-			}
-			Hits []struct {
-				Source json.RawMessage `json:"_source"`
-			}
-		}
-	}{}
-
-	err := json.NewDecoder(response.Body).Decode(v)
+	d := json.NewDecoder(body)
+	_, err := d.Token()
 	if err != nil {
-		return "", 0, fmt.Errorf("failed to decode search response: %w", err)
+		return "", 0, err
 	}
+	var totalCount int
+	var hintsCount int
+	var scrollId string
 
-	for _, hit := range v.Hits.Hits {
-		err := csv.write(hit.Source)
+	for d.More() {
+		s, err := d.Token()
 		if err != nil {
-			return "", v.Hits.Total.Value, fmt.Errorf("failed to write csv: %w", err)
+			return "", 0, err
+		}
+
+		if s == "_scroll_id" {
+			a, err := d.Token()
+			if err != nil {
+				return "", 0, err
+			}
+			if id, ok := a.(string); ok {
+				scrollId = id
+			}
+
+			_, err = d.Token()
+			if err != nil {
+				return "", 0, err
+			}
+		}
+
+		if s != "hits" {
+			if err = skip(d); err != nil {
+				return "", 0, err
+			}
+			continue
+		}
+
+		_, err = d.Token()
+		if err != nil {
+			return "", 0, err
+		}
+		for d.More() {
+			a, _ := d.Token()
+
+			switch a {
+
+			case "hits":
+				_, err := d.Token()
+				if err != nil {
+					return "", 0, err
+				}
+
+				for d.More() {
+					hintsCount++
+					v := &struct {
+						Source json.RawMessage `json:"_source"`
+					}{}
+					err = d.Decode(&v)
+					if err != nil {
+						return "", 0, err
+					}
+					err = csv.write(v.Source)
+					if err != nil {
+						return "", totalCount, fmt.Errorf("failed to write csv: %w", err)
+					}
+				}
+				_, err = d.Token()
+				if err != nil {
+					return "", 0, err
+				}
+				continue
+			case "total":
+				_, err := d.Token()
+				if err != nil {
+					return "", 0, err
+				}
+				for d.More() {
+					a, err = d.Token()
+					if err != nil {
+						return "", 0, err
+					}
+					if a != "value" {
+						continue
+					}
+					err = d.Decode(&totalCount)
+					if err != nil {
+						return "", 0, err
+					}
+				}
+				_, err = d.Token()
+				if err != nil {
+					return "", 0, err
+				}
+				continue
+			default:
+				if err := skip(d); err != nil {
+					return "", 0, err
+				}
+				continue
+
+			}
 		}
 	}
 
-	if len(v.Hits.Hits) != 10000 {
-		return "", v.Hits.Total.Value, nil
+	if hintsCount != size { // returned documents fewer than requested page size means we are on the last page.
+		return "", totalCount, nil
 	}
 
-	return v.ScrollID, v.Hits.Total.Value, nil
+	return scrollId, totalCount, nil
+}
+func skip(d *json.Decoder) error {
+	n := 0
+	for {
+		t, err := d.Token()
+		if err != nil {
+			return err
+		}
+		switch t {
+		case json.Delim('['), json.Delim('{'):
+			n++
+		case json.Delim(']'), json.Delim('}'):
+			n--
+		}
+		if n == 0 {
+			return nil
+		}
+	}
 }

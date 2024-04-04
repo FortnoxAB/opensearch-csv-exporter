@@ -38,7 +38,7 @@ cover-test: cover
 	gototcov -f cover.out -limit 80 -ignore-zero
 
 localrun:
-	bash -c "env `grep -Ev '^#' .env | xargs` go run cmd/opensearch-csv-exporter/*.go"
+	bash -c "env `grep -Ev '^#' .env | xargs` go run ./cmd/opensearch-csv-exporter"
 
 # To format your files according to goimports you can run: `goimports -w .`
 # or setup your ide to do it for you
