@@ -184,6 +184,7 @@ func search(ctx context.Context, config OpensearchConfig, client *elasticsearch.
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to search: %w", err)
 	}
+	defer response.Body.Close()
 	if response.IsError() {
 		return "", 0, fmt.Errorf("failed to decode, response is error: %s", response)
 	}
@@ -198,6 +199,7 @@ func scroll(ctx context.Context, client *elasticsearch.Client, csv *CSV, body io
 	if err != nil {
 		return "", fmt.Errorf("failed to scroll: %w", err)
 	}
+	defer response.Body.Close()
 	if response.IsError() {
 		return "", fmt.Errorf("failed to decode, response is error: %s", response)
 	}
@@ -206,8 +208,6 @@ func scroll(ctx context.Context, client *elasticsearch.Client, csv *CSV, body io
 }
 
 func decode(body io.ReadCloser, csv *CSV) (string, int, error) {
-	defer body.Close()
-
 	d := json.NewDecoder(body)
 	_, err := d.Token()
 	if err != nil {
