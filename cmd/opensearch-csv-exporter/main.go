@@ -11,6 +11,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/fortnoxab/fnxlogrus"
 	"github.com/fortnoxab/ginprometheus"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/jonaz/ginlogrus"
 	"github.com/koding/multiconfig"
@@ -75,6 +76,7 @@ func main() {
 
 	router := gin.New()
 	ginprometheus.New("http").Use(router)
+	pprof.Register(router)
 	router.Use(ginlogrus.New(logrus.StandardLogger(), "/health", "/metrics"), gin.Recovery())
 	router.GET("/health")
 

@@ -1,0 +1,76 @@
+{
+	"_scroll_id": "cool scroll id",
+	"took": 233,
+	"timed_out": false,
+	"_shards": {
+		"total": 750,
+		"successful": 750,
+		"skipped": 726,
+		"failed": 0
+	},
+	"_clusters": {
+		"total": 4,
+		"successful": 4,
+		"skipped": 0
+	},
+	"hits": {
+		"total": {
+			"value": 3,
+			"relation": "eq"
+		},
+		"max_score": 7.256951,
+		"hits": [
+			{
+				"_index": "medium-2024.04.03",
+				"_id": "id1",
+				"_source": {
+					"@timestamp": "2024-04-03T06:11:55.105Z",
+					"message": "cool log number 1",
+					"type": "cool type",
+					"stream": "stderr",
+					"container": {
+						"image": {
+							"name": "cool image name 1"
+						},
+						"id": "container id 1",
+						"runtime": "containerd"
+					}
+				}
+			},
+			{
+				"_index": "medium-2024.04.03",
+				"_id": "id2",
+				"_source": {
+					"@timestamp": "2024-04-03T06:11:55.205Z",
+					"message": "cool log number 2",
+					"type": "cool type",
+					"stream": "stderr",
+					"container": {
+						"image": {
+							"name": "cool image name 2"
+						},
+						"id": "container id 2",
+						"runtime": "containerd"
+					}
+				}
+			},
+			{
+				"_index": "medium-2024.04.03",
+				"_id": "id3",
+				"_source": {
+					"@timestamp": "2024-04-03T06:11:55.305Z",
+					"message": "cool log number 3",
+					"type": "cool type",
+					"stream": "stderr",
+					"container": {
+						"image": {
+							"name": "cool image name 3"
+						},
+						"id": "container id 3",
+						"runtime": "containerd"
+					}
+				}
+			}
+		]
+	}
+}
